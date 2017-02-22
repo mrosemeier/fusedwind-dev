@@ -861,7 +861,7 @@ class BladeLayup(object):
         wsets, wmaxthick = _region_sets(self.webs)
         if hasattr(self, 'bonds'):
             bsets, bmaxthick = _region_sets(self.bonds)
-            maxthick = np.max([rmaxthick, wmaxthick, bmaxthick])
+            maxthick = np.max([rmaxthick, wmaxthick])  # , bmaxthick])
         else:
             maxthick = np.max([rmaxthick, wmaxthick])
 
@@ -938,6 +938,82 @@ def create_bladestructure(bl):
         st3d['bonds'] = _create_regions(bl.bonds)
 
     return st3d
+
+
+def create_bladelayup(st3d):
+    """ Creator for BladeLayup object from BladeStructureVT3D
+
+    :param: st3d: The st3d dictionary containing geometric and material properties
+        definition of the blade structure
+
+    :return bl: BladeLayupShell object
+    """
+
+    bl = BladeLayup()
+
+    bl._version = st3d['version']
+
+    bl.s = st3d['s']
+
+    for i, k in enumerate(st3d['materials'].iterkeys()):
+        mat = bl.add_material(k)
+        mat.set_props(E1=st3d['matprops'][i][0],
+                      E2=st3d['matprops'][i][1],
+                      E3=st3d['matprops'][i][2],
+                      nu12=st3d['matprops'][i][3],
+                      nu13=st3d['matprops'][i][4],
+                      nu23=st3d['matprops'][i][5],
+                      G12=st3d['matprops'][i][6],
+                      G13=st3d['matprops'][i][7],
+                      G23=st3d['matprops'][i][8],
+                      rho=st3d['matprops'][i][9])
+        mat.set_resists_strains(failcrit=st3d['failcrit'][i],
+                                e11_t=st3d['failmat'][i][9],
+                                e22_t=st3d['failmat'][i][10],
+                                e33_t=st3d['failmat'][i][11],
+                                e11_c=st3d['failmat'][i][12],
+                                e22_c=st3d['failmat'][i][13],
+                                e33_c=st3d['failmat'][i][14],
+                                g12=st3d['failmat'][i][15],
+                                g13=st3d['failmat'][i][16],
+                                g23=st3d['failmat'][i][17])
+        mat.set_safety_GL2010(gM0=st3d['failmat'][i][18],
+                              C1a=st3d['failmat'][i][19],
+                              C2a=st3d['failmat'][i][20],
+                              C3a=st3d['failmat'][i][21],
+                              C4a=st3d['failmat'][i][22])
+
+    bl.init_regions(len(st3d['regions']))
+
+    for idp, dp in enumerate(bl.DPs.itervalues()):
+        dp.arc = st3d['DPs'][:, idp]
+
+    for ir, reg in enumerate(st3d['regions']):
+        for il, lay in enumerate(reg['layers']):
+            layer = bl.regions['region%02d' % ir].add_layer(lay[:-2])
+            layer.thickness = np.squeeze(reg['thicknesses'][:, il])
+            layer.angle = np.squeeze(reg['angles'][:, il])
+
+    bl.init_webs(nw=len(st3d['web_def']), iwebs=st3d['web_def'])
+
+    for ir, reg in enumerate(st3d['webs']):
+        for il, lay in enumerate(reg['layers']):
+            layer = bl.webs['web%02d' % ir].add_layer(lay[:-2])
+            layer.thickness = np.squeeze(reg['thicknesses'][:, il])
+            layer.angle = np.squeeze(reg['angles'][:, il])
+
+    if st3d['bond_def']:
+        bl.init_bonds(nb=1, ibonds=st3d['bond_def'])
+
+        for ir, reg in enumerate(st3d['bonds']):
+            for il, lay in enumerate(reg['layers']):
+                layer = bl.bonds['bond%02d' % ir].add_layer(lay[:-2])
+                layer.thickness = np.squeeze(reg['thicknesses'][:, il])
+                layer.angle = np.squeeze(reg['angles'][:, il])
+
+    bl.check_consistency()
+
+    return bl
 
 
 def pickle_bladelayup(bl):
