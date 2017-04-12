@@ -609,13 +609,16 @@ class BladeLayup(object):
         else:
             print('OK.')
 
-    def print_plybook(self, filename='plybook', vmode='stack', include_materials=False):
+    def print_plybook(self, filename='plybook', vmode='stack',
+                      include_materials=False, slim=[]):
         ''' Prints a PDF file for layup visualization.
 
         :param filename: name of the PDF
         :param vmode: 'stack' or 'explode' visualization of layup
         :param include_materials: True if materials should be included (runs only
                 when check_consistency() is OK)
+        :param slim: [slim_lower, slim_upper] limits the x axis of the plots
+
         '''
 
         import matplotlib.pylab as plt
@@ -685,34 +688,37 @@ class BladeLayup(object):
             for i, mat_name in enumerate(self.materials.iterkeys()):
                 plt.bar(
                     ind + i *
-                    width, self.materials[mat_name].failmat()[0][N:2 * N - 1],
+                    width, self.materials[mat_name].failmat()[0][N:2 * N],
                     width,
                     color=cm_dict[mat_name], label=mat_name)
                 if i == 1:
                     matprops_labels = self.materials[mat_name].failmat()[1]
 
-            plt.xticks(ind + .5, matprops_labels[N:2 * N - 1])
+            plt.xticks(ind + .5, matprops_labels[N:2 * N])
+            plt.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
             plt.legend(loc='best', prop={'size': 10}, framealpha=0.5)
+            pb.savefig()  # save fig to plybook
 
             # failmat_safety
             plt.figure()
             plt.title('FAILMAT_SAFETY')
-            N = 9
+            N = 5
             ind = np.arange(N)    # the x locations for the groups
             # the width of the bars: can also be len(x) sequence
-            width = 1.0 / N
+            width = 1.0 / 9
             for i, mat_name in enumerate(self.materials.iterkeys()):
                 plt.bar(
                     ind + i *
                     width, self.materials[
-                        mat_name].failmat()[0][2 * N - 1:3 * N - 1],
+                        mat_name].failmat()[0][18:18 + N],
                     width,
                     color=cm_dict[mat_name], label=mat_name)
                 if i == 1:
                     matprops_labels = self.materials[mat_name].failmat()[1]
 
-            plt.xticks(ind + .5, matprops_labels[2 * N - 1:3 * N - 1])
+            plt.xticks(ind + .5, matprops_labels[18:18 + N])
             plt.legend(loc='best', prop={'size': 10}, framealpha=0.5)
+            pb.savefig()  # save fig to plybook
 
         plt.figure()
         plt.title('DPs')
@@ -722,6 +728,8 @@ class BladeLayup(object):
         # draw station lines
         for s in self.s:
             plt.plot([self.s, self.s], [-1, 1], 'k', linewidth=0.5)
+        if slim:
+            plt.xlim((slim[0], slim[1]))
         pb.savefig()  # save fig to plybook
 
         def _region_sets(reg_type):
@@ -855,13 +863,15 @@ class BladeLayup(object):
                         t = t + max_thick
                 plt.ylim([0, maxthick])  # set all plot limits to maxthickness
                 plt.legend(loc='best', prop={'size': 10}, framealpha=0.5)
+                if slim:
+                    plt.xlim((slim[0], slim[1]))
                 pb.savefig(fig1)  # save fig to plybook
 
         rsets, rmaxthick = _region_sets(self.regions)
         wsets, wmaxthick = _region_sets(self.webs)
         if hasattr(self, 'bonds'):
             bsets, bmaxthick = _region_sets(self.bonds)
-            maxthick = np.max([rmaxthick, wmaxthick, bmaxthick])
+            maxthick = np.max([rmaxthick, wmaxthick])  # , bmaxthick])
         else:
             maxthick = np.max([rmaxthick, wmaxthick])
 
@@ -938,6 +948,82 @@ def create_bladestructure(bl):
         st3d['bonds'] = _create_regions(bl.bonds)
 
     return st3d
+
+
+def create_bladelayup(st3d):
+    """ Creator for BladeLayup object from BladeStructureVT3D
+
+    :param: st3d: The st3d dictionary containing geometric and material properties
+        definition of the blade structure
+
+    :return bl: BladeLayupShell object
+    """
+
+    bl = BladeLayup()
+
+    bl._version = st3d['version']
+
+    bl.s = st3d['s']
+
+    for i, k in enumerate(st3d['materials'].iterkeys()):
+        mat = bl.add_material(k)
+        mat.set_props(E1=st3d['matprops'][i][0],
+                      E2=st3d['matprops'][i][1],
+                      E3=st3d['matprops'][i][2],
+                      nu12=st3d['matprops'][i][3],
+                      nu13=st3d['matprops'][i][4],
+                      nu23=st3d['matprops'][i][5],
+                      G12=st3d['matprops'][i][6],
+                      G13=st3d['matprops'][i][7],
+                      G23=st3d['matprops'][i][8],
+                      rho=st3d['matprops'][i][9])
+        mat.set_resists_strains(failcrit=st3d['failcrit'][i],
+                                e11_t=st3d['failmat'][i][9],
+                                e22_t=st3d['failmat'][i][10],
+                                e33_t=st3d['failmat'][i][11],
+                                e11_c=st3d['failmat'][i][12],
+                                e22_c=st3d['failmat'][i][13],
+                                e33_c=st3d['failmat'][i][14],
+                                g12=st3d['failmat'][i][15],
+                                g13=st3d['failmat'][i][16],
+                                g23=st3d['failmat'][i][17])
+        mat.set_safety_GL2010(gM0=st3d['failmat'][i][18],
+                              C1a=st3d['failmat'][i][19],
+                              C2a=st3d['failmat'][i][20],
+                              C3a=st3d['failmat'][i][21],
+                              C4a=st3d['failmat'][i][22])
+
+    bl.init_regions(len(st3d['regions']))
+
+    for idp, dp in enumerate(bl.DPs.itervalues()):
+        dp.arc = st3d['DPs'][:, idp]
+
+    for ir, reg in enumerate(st3d['regions']):
+        for il, lay in enumerate(reg['layers']):
+            layer = bl.regions['region%02d' % ir].add_layer(lay[:-2])
+            layer.thickness = np.squeeze(reg['thicknesses'][:, il])
+            layer.angle = np.squeeze(reg['angles'][:, il])
+
+    bl.init_webs(nw=len(st3d['web_def']), iwebs=st3d['web_def'])
+
+    for ir, reg in enumerate(st3d['webs']):
+        for il, lay in enumerate(reg['layers']):
+            layer = bl.webs['web%02d' % ir].add_layer(lay[:-2])
+            layer.thickness = np.squeeze(reg['thicknesses'][:, il])
+            layer.angle = np.squeeze(reg['angles'][:, il])
+
+    if st3d['bond_def']:
+        bl.init_bonds(nb=1, ibonds=st3d['bond_def'])
+
+        for ir, reg in enumerate(st3d['bonds']):
+            for il, lay in enumerate(reg['layers']):
+                layer = bl.bonds['bond%02d' % ir].add_layer(lay[:-2])
+                layer.thickness = np.squeeze(reg['thicknesses'][:, il])
+                layer.angle = np.squeeze(reg['angles'][:, il])
+
+    bl.check_consistency()
+
+    return bl
 
 
 def pickle_bladelayup(bl):
