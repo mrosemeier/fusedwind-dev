@@ -609,13 +609,16 @@ class BladeLayup(object):
         else:
             print('OK.')
 
-    def print_plybook(self, filename='plybook', vmode='stack', include_materials=False):
+    def print_plybook(self, filename='plybook', vmode='stack',
+                      include_materials=False, slim=[]):
         ''' Prints a PDF file for layup visualization.
 
         :param filename: name of the PDF
         :param vmode: 'stack' or 'explode' visualization of layup
         :param include_materials: True if materials should be included (runs only
                 when check_consistency() is OK)
+        :param slim: [slim_lower, slim_upper] limits the x axis of the plots
+
         '''
 
         import matplotlib.pylab as plt
@@ -685,34 +688,37 @@ class BladeLayup(object):
             for i, mat_name in enumerate(self.materials.iterkeys()):
                 plt.bar(
                     ind + i *
-                    width, self.materials[mat_name].failmat()[0][N:2 * N - 1],
+                    width, self.materials[mat_name].failmat()[0][N:2 * N],
                     width,
                     color=cm_dict[mat_name], label=mat_name)
                 if i == 1:
                     matprops_labels = self.materials[mat_name].failmat()[1]
 
-            plt.xticks(ind + .5, matprops_labels[N:2 * N - 1])
+            plt.xticks(ind + .5, matprops_labels[N:2 * N])
+            plt.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
             plt.legend(loc='best', prop={'size': 10}, framealpha=0.5)
+            pb.savefig()  # save fig to plybook
 
             # failmat_safety
             plt.figure()
             plt.title('FAILMAT_SAFETY')
-            N = 9
+            N = 5
             ind = np.arange(N)    # the x locations for the groups
             # the width of the bars: can also be len(x) sequence
-            width = 1.0 / N
+            width = 1.0 / 9
             for i, mat_name in enumerate(self.materials.iterkeys()):
                 plt.bar(
                     ind + i *
                     width, self.materials[
-                        mat_name].failmat()[0][2 * N - 1:3 * N - 1],
+                        mat_name].failmat()[0][18:18 + N],
                     width,
                     color=cm_dict[mat_name], label=mat_name)
                 if i == 1:
                     matprops_labels = self.materials[mat_name].failmat()[1]
 
-            plt.xticks(ind + .5, matprops_labels[2 * N - 1:3 * N - 1])
+            plt.xticks(ind + .5, matprops_labels[18:18 + N])
             plt.legend(loc='best', prop={'size': 10}, framealpha=0.5)
+            pb.savefig()  # save fig to plybook
 
         plt.figure()
         plt.title('DPs')
@@ -722,6 +728,8 @@ class BladeLayup(object):
         # draw station lines
         for s in self.s:
             plt.plot([self.s, self.s], [-1, 1], 'k', linewidth=0.5)
+        if slim:
+            plt.xlim((slim[0], slim[1]))
         pb.savefig()  # save fig to plybook
 
         def _region_sets(reg_type):
@@ -855,6 +863,8 @@ class BladeLayup(object):
                         t = t + max_thick
                 plt.ylim([0, maxthick])  # set all plot limits to maxthickness
                 plt.legend(loc='best', prop={'size': 10}, framealpha=0.5)
+                if slim:
+                    plt.xlim((slim[0], slim[1]))
                 pb.savefig(fig1)  # save fig to plybook
 
         rsets, rmaxthick = _region_sets(self.regions)
