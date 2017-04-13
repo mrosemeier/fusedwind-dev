@@ -499,7 +499,7 @@ See output:
 
 * :download:`plybook_explode <images/plybook_explode.pdf>`
 
-Further functinalities in ``fusedwind.turbine.layup.py``:
+Further functionalities in ``fusedwind.turbine.layup.py``:
 
 * *BladeLayup* can be converted into an *st3d* dictionary using
   :class:`create_bladestructure(bl)` function.
