@@ -610,7 +610,8 @@ class BladeLayup(object):
             print('OK.')
 
     def print_plybook(self, filename='plybook', vmode='stack',
-                      include_materials=False, slim=[]):
+                      include_materials=False, slim=[], add_filename=False,
+                      add_page=False):
         ''' Prints a PDF file for layup visualization.
 
         :param filename: name of the PDF
@@ -618,6 +619,8 @@ class BladeLayup(object):
         :param include_materials: True if materials should be included (runs only
                 when check_consistency() is OK)
         :param slim: [slim_lower, slim_upper] limits the x axis of the plots
+        :param add_filename: if True filename is added to each plot 
+        :param add_page: if True page number of plybook is added to each plot 
 
         '''
 
@@ -639,9 +642,13 @@ class BladeLayup(object):
         for i, m in enumerate(self.materials.iterkeys()):
             cm_dict[m] = mat_colors[i]
 
+        page_pos_x = 0.98
+        page_pos_y = 0.02
+        filename_pos_x = 0.02
+        filename_pos_y = 0.02
         if include_materials:
             # material properties
-            plt.figure()
+            fig, _ = plt.subplots()
             plt.title('MATPROPS')
             N = 10
             ind = np.arange(N)    # the x locations for the groups
@@ -657,10 +664,17 @@ class BladeLayup(object):
 
             plt.xticks(ind + .5, matprops_labels)
             plt.legend(loc='best', prop={'size': 10}, framealpha=0.5)
+            # add page number and filename to figure
+            if add_page:
+                fig.text(
+                    page_pos_x, page_pos_y, str(pb.get_pagecount() + 1), ha='left', fontsize=8)
+            if add_filename:
+                fig.text(filename_pos_x, filename_pos_y, str(
+                    filename), ha='left', fontsize=8)
             pb.savefig()  # save fig to plybook
 
             # failmat_stress
-            plt.figure()
+            fig, _ = plt.subplots()
             plt.title('FAILMAT_STRESS')
             N = 9
             ind = np.arange(N)    # the x locations for the groups
@@ -676,10 +690,17 @@ class BladeLayup(object):
 
             plt.xticks(ind + .5, matprops_labels[:N])
             plt.legend(loc='best', prop={'size': 10}, framealpha=0.5)
+            # add page number and filename to figure
+            if add_page:
+                fig.text(
+                    page_pos_x, page_pos_y, str(pb.get_pagecount() + 1), ha='left', fontsize=8)
+            if add_filename:
+                fig.text(filename_pos_x, filename_pos_y, str(
+                    filename), ha='left', fontsize=8)
             pb.savefig()  # save fig to plybook
 
             # failmat_strain
-            plt.figure()
+            fig, _ = plt.subplots()
             plt.title('FAILMAT_STRAIN')
             N = 9
             ind = np.arange(N)    # the x locations for the groups
@@ -697,10 +718,17 @@ class BladeLayup(object):
             plt.xticks(ind + .5, matprops_labels[N:2 * N])
             plt.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
             plt.legend(loc='best', prop={'size': 10}, framealpha=0.5)
+            # add page number and filename to figure
+            if add_page:
+                fig.text(
+                    page_pos_x, page_pos_y, str(pb.get_pagecount() + 1), ha='left', fontsize=8)
+            if add_filename:
+                fig.text(filename_pos_x, filename_pos_y, str(
+                    filename), ha='left', fontsize=8)
             pb.savefig()  # save fig to plybook
 
             # failmat_safety
-            plt.figure()
+            fig, _ = plt.subplots()
             plt.title('FAILMAT_SAFETY')
             N = 5
             ind = np.arange(N)    # the x locations for the groups
@@ -718,9 +746,16 @@ class BladeLayup(object):
 
             plt.xticks(ind + .5, matprops_labels[18:18 + N])
             plt.legend(loc='best', prop={'size': 10}, framealpha=0.5)
+            # add page number and filename to figure
+            if add_page:
+                fig.text(
+                    page_pos_x, page_pos_y, str(pb.get_pagecount() + 1), ha='left', fontsize=8)
+            if add_filename:
+                fig.text(filename_pos_x, filename_pos_y, str(
+                    filename), ha='left', fontsize=8)
             pb.savefig()  # save fig to plybook
 
-        plt.figure()
+        fig, _ = plt.subplots()
         plt.title('DPs')
         for di, dk in enumerate(sorted(self.DPs, reverse=True)):
             plt.plot(self.s, self.DPs[dk].arc, label=dk[-2:])
@@ -730,6 +765,13 @@ class BladeLayup(object):
             plt.plot([self.s, self.s], [-1, 1], 'k', linewidth=0.5)
         if slim:
             plt.xlim((slim[0], slim[1]))
+        # add page number and filename to figure
+        if add_page:
+            fig.text(
+                page_pos_x, page_pos_y, str(pb.get_pagecount() + 1), ha='left', fontsize=8)
+        if add_filename:
+            fig.text(filename_pos_x, filename_pos_y, str(
+                filename), ha='left', fontsize=8)
         pb.savefig()  # save fig to plybook
 
         def _region_sets(reg_type):
@@ -776,8 +818,9 @@ class BladeLayup(object):
 
             for rset in rsets:
                 r = reg_type['%s%02d' % (rtype, rset[0])]
-                fig1 = plt.figure()
-                ax1 = fig1.add_subplot(111)
+                fig1, ax1 = plt.subplots()
+                #fig1 = plt.figure()
+                #ax1 = fig1.add_subplot(111)
                 plt.title(rtype.upper() + ' ' + str(rset))
                 # draw station lines
                 for s in self.s:
@@ -865,6 +908,13 @@ class BladeLayup(object):
                 plt.legend(loc='best', prop={'size': 10}, framealpha=0.5)
                 if slim:
                     plt.xlim((slim[0], slim[1]))
+                # add page number and filename to figure
+                if add_page:
+                    fig1.text(
+                        page_pos_x, page_pos_y, str(pb.get_pagecount() + 1), ha='left', fontsize=8)
+                if add_filename:
+                    fig1.text(filename_pos_x, filename_pos_y, str(
+                        filename), ha='left', fontsize=8)
                 pb.savefig(fig1)  # save fig to plybook
 
         rsets, rmaxthick = _region_sets(self.regions)
