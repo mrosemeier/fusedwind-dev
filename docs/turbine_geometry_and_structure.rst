@@ -2,7 +2,7 @@
 .. _sec_blade_geometry_ex_label:
 
 Blade Geometry
-==============
+++++++++++++++
 
 A blade planform in FUSED-Wind is described by spanwise distributions of the variables *chord*, *twist*, *relative thickness*, and *pitch axis aft leading edge*.
 The default file format used to represent a blade planform contains the following columns:
