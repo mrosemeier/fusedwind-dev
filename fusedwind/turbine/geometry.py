@@ -511,6 +511,7 @@ class FFDSpline(Component):
         self._P = self.spline(self.s[self._iCx0:self._iCx1], self.Cx, C)
         _P = np.zeros(self.Pinit.shape[0])
         _P[self._iCx0:self._iCx1] = self._P
+
         P = self.Pinit + _P * self.scaler
         curv = curvature(np.array([self.s, P]).T)
         unknowns[self._name] = P
@@ -642,6 +643,7 @@ class SplinedBladePlanform(Group):
                                                 Cx=Cx, scaler=scaler),
                                                 promotes=['chord_C', 'chord_curv'])
             c.spline_options['spline_type'] = spline_type
+            c.set_spline(spline_type)
             self.add('chord_scaler', ScaleChord(self._size), promotes=['blade_scale', 'chord'])
             self.connect('chord_s.chord', 'chord_scaler.chord_in')
         else:
@@ -653,6 +655,7 @@ class SplinedBladePlanform(Group):
                                                 Cx=Cx, scaler=scaler),
                                                 promotes=[name, name + '_C', name + '_curv'])
             c.spline_options['spline_type'] = spline_type
+            c.set_spline(spline_type)
 
     def configure(self):
 
