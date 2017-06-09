@@ -625,6 +625,7 @@ class ComputeDPsParam2(object):
 
         self.consistency_check = True
         self.min_width = 0.
+        self.ref_axis = 'linear'
 
         for k, v in kwargs.iteritems():
             if hasattr(self, k):
@@ -642,10 +643,17 @@ class ComputeDPsParam2(object):
                                   self.surface[:, :, 2]))
         surforg = self.dom.blocks['block']._block2arr()[:, :, 0, :].copy()
         self.dom.rotate_z(self.struct_angle)
-        x = np.interp(self.z, np.linspace(0, 1, self.ni),
-                              np.linspace(self.x[0], self.x[-1], self.ni))
-        y = np.interp(self.z, np.linspace(0, 1, self.ni),
-                              np.linspace(self.y[0], self.y[-1], self.ni))
+        if self.ref_axis == 'main_axis':
+            x = self.x
+            y = self.y
+        elif self.ref_axis == 'linear':
+            x = np.interp(self.z, np.linspace(0, 1, self.ni),
+                                  np.linspace(self.x[0], self.x[-1], self.ni))
+            y = np.interp(self.z, np.linspace(0, 1, self.ni),
+                                  np.linspace(self.y[0], self.y[-1], self.ni))
+        else:
+            raise RuntimeError('ref_axis %s not understood' % self.ref_axis)
+
         self.pitch_axis = Curve(points=np.array([x, y, self.z]).T)
         self.pitch_axis.rotate_z(self.struct_angle)
 
@@ -1075,10 +1083,10 @@ class SplinedBladeStructure(SplinedBladeStructureBase):
 
 class DPsParam2(Component):
 
-    def __init__(self, st3d, sdim):
+    def __init__(self, st3d, sdim, config={}):
         super(DPsParam2, self).__init__()
 
-        self._DPs = ComputeDPsParam2(st3d)
+        self._DPs = ComputeDPsParam2(st3d, **config)
 
         size = sdim[1]
 
@@ -1129,7 +1137,7 @@ class SplinedBladeStructureParam2(SplinedBladeStructureBase):
     or arrays according to the initial structural data
     """
 
-    def __init__(self, st3d, sdim):
+    def __init__(self, st3d, sdim, config={}):
         """
         parameters
         ----------
@@ -1146,7 +1154,7 @@ class SplinedBladeStructureParam2(SplinedBladeStructureBase):
         for i in range(nDP):
             name = 'DP%02d' % i
             promotes.append(name)
-        self.add('compute_dps', DPsParam2(st3d, sdim), promotes=promotes)
+        self.add('compute_dps', DPsParam2(st3d, sdim, config), promotes=promotes)
 
         self._param2_names = self.compute_dps._param2_names
         # DPsParam2 always outputs DP00, DP01, so add them to
