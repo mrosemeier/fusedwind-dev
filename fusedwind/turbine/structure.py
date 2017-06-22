@@ -754,24 +754,36 @@ class ComputeDPsParam2(object):
         ss = range(self.le_DPs[1], self.te_DPs[1] + 1)
         for i in range(self.ni):
             for j in ps:
+                try:
+                    min_width = self.min_width[j]
+                except:
+                    min_width = self.min_width
                 if self.afs[i].s_to_01(DPs[i, j]) > self.afs[i].sLE:
-                    DPs[i, j] = self.afs[i].s_to_11(self.afs[i].sLE) - self.min_width
+                    DPs[i, j] = self.afs[i].s_to_11(self.afs[i].sLE) - min_width
             for j in ss:
+                try:
+                    min_width = self.min_width[j]
+                except:
+                    min_width = self.min_width
                 if self.afs[i].s_to_01(DPs[i, j]) < self.afs[i].sLE:
-                    DPs[i, j] = self.afs[i].s_to_11(self.afs[i].sLE)  + self.min_width
+                    DPs[i, j] = self.afs[i].s_to_11(self.afs[i].sLE)  + min_width
 
         # check for negative region widths
         for i in range(self.ni):
             for j in range(1, DPs.shape[1]-1):
+                try:
+                    min_width = self.min_width[j]
+                except:
+                    min_width = self.min_width
                 if np.diff(DPs[i, [j, j+1]]) < 0.:
                     if j-1 in self.dominant_regions and j+1 not in self.cap_DPs:
-                        DPs[i, j+1] = DPs[i, j] + self.min_width
+                        DPs[i, j+1] = DPs[i, j] + min_width
                     elif j+1 in self.dominant_regions and j not in self.cap_DPs:
-                        DPs[i, j] = DPs[i, j+1] - self.min_width
+                        DPs[i, j] = DPs[i, j+1] - min_width
                     else:
                         mid = 0.5 * (DPs[i, j] + DPs[i, j+1])
-                        DPs[i, j] = mid - self.min_width
-                        DPs[i, j+1] = mid + self.min_width
+                        DPs[i, j] = mid - min_width
+                        DPs[i, j+1] = mid + min_width
 
     def plot(self, isec=None, ifig=1, coordsys='rotor'):
 
@@ -796,7 +808,10 @@ class ComputeDPsParam2(object):
             DP = np.array([af.interp_s(af.s_to_01(s)) for s in self.DPs[i, :]])
             width = np.diff(self.DPs[i, :])
             valid = np.ones(DP.shape[0])
-            valid[1:] = width > self.min_width
+            try:
+                valid[1:] = width > self.min_width[1:]
+            except:
+                valid[1:] = width > self.min_width
             for d in DP:
                 plt.plot(d[0], d[1], 'ro')
             for d in DP[self.cap_DPs, :]:
