@@ -25,8 +25,7 @@ The class ``fusedwind.turbine.geometry.PGLLoftedBladeSurface`` provides an OpenM
 In the example below we show how to setup a splined blade planform and lofted blade surface. In the example, the blade planform data and the lofted surface will be discretised differently, one meant for the aerodynamic calculation, and the other for the structural.
 The example is located in ``fusedwind/examples/turbine/loftedsurface_with_cps.py``.
 
-The first step is to read in the blade planform using the :class:`fusedwind.turbine.geometry.read_bladeplanform` method.
-Using the :class:`fusedwind.turbine.geometry.redistribute_planform` method, the planform is redistributed according to the desired number of points.
+The first step is to read in the blade planform using the :class:`fusedwind.turbine.geometry.read_bladeplanform` method. Using the :class:`fusedwind.turbine.geometry.redistribute_planform` method, the planform is redistributed according to the desired number of points.
 
 .. literalinclude:: ../fusedwind/examples/turbine/loftedsurface_with_cps_ex.py
     :start-after: # --- 1
@@ -127,6 +126,8 @@ Modifying the chord is done in the same way by changing the `chord_C` array as s
 
     Blade chord pertubation.
 
+
+.. _blade-structure-example-label:
 
 Blade Structure Example
 +++++++++++++++++++++++
@@ -237,20 +238,26 @@ geometry are:
 
 * *cap_center_ps*, *cap_center_ss*: Lower and upper spar cap centers relative to the reference plane. Positive towards leading edge.
 
-* *cap_width_ps*, *cap_width_ss*: Lower and upper spar cap widths measured as surface curve length.
+* *cap_width_ps*, *cap_width_ss*: Lower and upper spar cap widths measured  as
+  surface curve length.
 
-* *te_width*, *le_width*: Trailing and leading edge reinforcement widths (le_width spans across the leading edge) measured as surface curve length.
+* *te_width*, *le_width*: Trailing and leading edge reinforcement widths
+  (le_width spans across the leading edge) measured as surface curve length.
 
-* *w01pos*, *w02pos*, *w03pos*: web positions relative to the reference plane. Positive towards leading edge.
+* *w01pos*, *w02pos*, *w03pos*: web positions relative to the reference plane.
+  Positive towards leading edge.
 
-The above quantities are all a function of unit span normalized with the blade length.
-The additional parameters that need to be defined are:
+The above quantities are all a function of unit span normalized with the blade
+length. The additional parameters that need to be defined are:
 
 * *le_DPs*: DPs enclosing the leading edge reinforcement.
 * *te_DPs*: DPs enclosing the trailing edge reinforcements.
 * *cap_DPs*: indices that enclose the two spar caps.
 * *dominant_regions*: indices of regions that overwrite colliding regions
-* *struct_angle*: The angle relative to the rotor plane that the blade is rotated with before placing the webs vertically, defined positive nose down. Note that this angle is independent of the aerodynamic twist, and is purely used to place the webs and main laminates.
+* *struct_angle*: The angle relative to the rotor plane that the blade is
+  rotated with before placing the webs vertically, defined positive nose down.
+  Note that this angle is independent of the aerodynamic twist, and is purely
+  used to place the webs and main laminates.
 
 The schematic below shows a blade cross section with the above quantities.
 
@@ -262,9 +269,10 @@ The schematic below shows a blade cross section with the above quantities.
 
     Schematic showing the geometric parameterisation of the blade structure.
 
-The reference plane that the caps and webs are placed relative to is a vertical plane
-starting at the blade root, ending at the blade tip.
-This plane will thus be rotated *struct_angle + 90* degrees relative to the rotor plane as shown in the below figure.
+The reference plane that the caps and webs are placed relative to is a vertical
+plane starting at the blade root, ending at the blade tip. This plane will thus
+be rotated *struct_angle + 90* degrees relative to the  rotor plane as shown in
+the below figure.
 
 
 .. _bladestructure_spline-fig:
@@ -276,13 +284,17 @@ This plane will thus be rotated *struct_angle + 90* degrees relative to the roto
     Schematic showing the definition of the structural angle *struct_angle*.
 
 
-You can generate the structural geometry either as a pre-processing step to an optimization where you optimize using the `DP` parameterisation, or use this parameterisation directly in an optimization.
-We firstly show how to call the ``ComputeDPsParam2`` class directly, which requires a pre-computed lofted blade surface as well as either an `st3d` dictionary with the structural inputs or that you specify these manually.
-The example is located in ``fusedwind/examples/turbine/blade_struct_param2.py``.
+You can generate the structural geometry either as a pre-processing step to  an
+optimization where you optimize using the `DP` parameterisation, or use this
+parameterisation directly in an optimization. We firstly show how to call the
+``ComputeDPsParam2`` class directly, which requires a pre-computed lofted blade
+surface as well as either an `st3d` dictionary with the structural inputs or
+that you specify these manually. The example is located in
+``fusedwind/examples/turbine/blade_struct_param2.py``.
 
-The initial step is to import the necessary Python modules, as well as the classes
-used in this example, which are ``PGL`` for generating the lofted surface,
-and methods and classes from ``fusedwind.turbine.structure``:
+The initial step is to import the necessary Python modules, as well as the
+classes used in this example, which are ``PGL`` for generating the lofted
+surface, and methods and classes from ``fusedwind.turbine.structure``:
 
 .. literalinclude:: ../fusedwind/examples/turbine/blade_struct_param2.py
     :start-after: # --- 1
@@ -325,17 +337,18 @@ to inspect the final structure, which are shown in the below figures.
    Blade structure generated using the ``ComputeDPsParam2`` class viewed from the tip
    in the rotor coordinate system.
 
-Note that the third shear web is parallel to the main laminate and intersects the
-trailing edge panel at approximately *r/R*=0.65, where it should stop.
-Although the current parameterisation does not allow for discontinuous DP definitions
-in the spanwise direction, this can be handled by collapsing the web DP onto the trailing edge panel DP.
-However, this requires that the meshing code used has a check for zero thickness
-regions and removes these before meshing.
-If this capability is not available, set the parameter ``min_width`` to something
-greater than zero.
-It is recommended that the trailing edge reinforcement and cap regions are specified as so-called ``dominant_regions``,
+Note that the third shear web is parallel to the main laminate and intersects
+the trailing edge panel at approximately *r/R*=0.65, where it should stop.
+Although the current parameterisation does not allow for discontinuous DP
+definitions in the spanwise direction, this can be handled by collapsing the
+web DP onto the trailing edge panel DP. However, this requires that the meshing
+code used has a check for zero thickness regions and removes these before
+meshing. If this capability is not available, set the parameter ``min_width``
+to something greater than zero. It is recommended that the trailing edge
+reinforcement and cap regions are specified as so-called ``dominant_regions``,
 which means that other regions are displaced by these to avoid negative widths.
-For regions not part of the ``dominant_regions``, colliding region edges (DPs) are moved to the mid-point between the two.
+For regions not part of the ``dominant_regions``, colliding region edges (DPs)
+are moved to the mid-point between the two.
 
 .. _bladestructure_param2-top-fig:
 
@@ -392,3 +405,109 @@ Running the example should produce the following plot showing the increased cap 
      :align: center
 
      Plot of the spar cap width modified using an FFD Bezier spline.
+     
+     
+Blade Layup
++++++++++++
+
+:Author: `Malo Rosemeier <mailto:malo.rosemeier@iwes.fraunhofer.de>`_
+
+A blade layup in FUSED-Wind is discretized by *materials*, *DPs*, *regions* and
+*webs* as described in :ref:`blade-structure-example-label`. The
+:class:`BladeLayup` class in ``fusedwind.turbine.layup.py`` offers an
+opportunity to generate the initial input files for the blade layup
+discretization via scripting.
+
+The first step is to create a BladeLayup object.
+
+.. literalinclude:: ../fusedwind/turbine/test/test_layup.py
+    :start-after: # --- 1
+    :end-before: # --- 2
+    
+Now the materials you want to use within your *regions* need to be defined.
+Here it is exemplary shown for the *triax* material.
+There are functions to set three types of materials:
+
+* Full 3D material properties :class:`bl.set_props()`.
+
+* Properties for an uniaxial orthotropic material
+  :class:`bl.set_props_uniax()`.
+
+* Properties for an isotropic properties :class:`bl.set_props_iso()`.
+
+.. literalinclude:: ../fusedwind/turbine/test/test_layup.py
+    :start-after: # --- 2
+    :end-before: # --- 3 
+    
+Then the material's strain resistances are set.
+The stress resistances are derived automatically.
+Again, there are functions for each of
+the three material definitions as described above:
+
+* :class:`bl.set_resists_strains()`
+
+* :class:`bl.set_resists_strains_uniax()`
+
+* :class:`bl.set_resists_strains_iso()`
+
+.. literalinclude:: ../fusedwind/turbine/test/test_layup.py
+    :start-after: # --- 3
+    :end-before: # --- 4 
+    
+The material's safety factors for strength as of GL guideline 2010 are set.
+
+.. literalinclude:: ../fusedwind/turbine/test/test_layup.py
+    :start-after: # --- 4
+    :end-before: # --- 5 
+    
+Then the layup's spanwise discritazation coordinate *s* is set and the amount of
+*regions* to be initialized. The *DPs* are automatically created and need to
+get an arc length position  along the circumference
+(:ref:`bladestructure_cross_sec-fig`) as function of span.
+
+.. literalinclude:: ../fusedwind/turbine/test/test_layup.py
+    :start-after: # --- 6
+    :end-before: # --- 7 
+    
+Hereafter *layers* are added to each region, where each *layer* gets a
+*thickness* and an *angle* as function of span. This procedure is exemplary
+shown for *region00*. It is also possible to simply copy a *region*'s layup.
+
+.. literalinclude:: ../fusedwind/turbine/test/test_layup.py
+    :start-after: # --- 7
+    :end-before: # --- 8 
+    
+As last step webs are initialized. That is number of webs and their division
+points are set. Finally, a consistency check should be executed to see if the
+layup is entirely defined.
+
+.. literalinclude:: ../fusedwind/turbine/test/test_layup.py
+    :start-after: # --- 9
+    :end-before: # --- 10 
+
+The layup can be visualized using the plotting function in two modes:
+``vmode='stack'`` and ```vmode='explode'```.
+
+.. code-block:: python
+   
+   bl.print_plybook(filename='plybook_stack', vmode='stack')
+   bl.print_plybook(filename='plybook_explode', vmode='explode')
+
+See output:
+
+* :download:`plybook_stack <images/plybook_stack.pdf>`
+
+* :download:`plybook_explode <images/plybook_explode.pdf>`
+
+Further functionalities in ``fusedwind.turbine.layup.py``:
+
+* *BladeLayup* can be converted into an *st3d* dictionary using
+  :class:`create_bladestructure(bl)` function.
+
+* *BladeLayup* can also be generated from an *st3d* dictionary using
+  :class:`create_bladelayup(st3d)` function.
+
+* To save some calculation time, *BladeLayup* can be pickled and unpickled
+  using respectively :class:`pickle_bladelayup(bl)` and
+  :class:`unpickle_bladelayup()`.
+

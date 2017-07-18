@@ -1,18 +1,20 @@
-
+import unittest
+import os
+import shutil
+# --- 1
 import numpy as np
 import copy
-import unittest
 
 from fusedwind.turbine.layup import BladeLayup, create_bladestructure
 from fusedwind.turbine.structure import write_bladestructure,\
     read_bladestructure
-import os
-import shutil
 
 
 def configure():
 
     bl = BladeLayup()
+
+    # --- 2
 
     biax = bl.add_material('triax')
 
@@ -27,6 +29,8 @@ def configure():
                    G23=4.539e9,
                    rho=1845)
 
+    # --- 3
+
     biax.set_resists_strains(failcrit='maximum_strain',
                              e11_t=9.52E-03,
                              e22_t=1.00E+06,
@@ -38,11 +42,15 @@ def configure():
                              g13=1.00E+06,
                              g23=1.00E+06)
 
+    # --- 4
+
     biax.set_safety_GL2010(gM0=1.25,
                            C1a=1.0,
                            C2a=1.0,
                            C3a=1.0,
                            C4a=1.0)
+
+    # --- 5
 
     uniax = bl.add_material('uniax')
     uniax.set_props(E1=41.63e9,
@@ -102,6 +110,8 @@ def configure():
                            C3a=1.0,
                            C4a=1.0)
 
+    # --- 6
+
     bl.s = [0, 0.25, 0.6, 1.]
 
     bl.init_regions(5)
@@ -116,6 +126,8 @@ def configure():
     bl.DPs['DP04'].arc[-1] = 0.51
     bl.DPs['DP02'].arc = np.ones(4) * -0.35
     bl.DPs['DP03'].arc = np.ones(4) * 0.3
+
+    # --- 7
 
     # add materials to regions
     r = bl.regions['region00']
@@ -135,6 +147,8 @@ def configure():
     l.thickness = np.array([0.008, 0.003, 0.002, 0.001])
     l.angle = np.zeros(4)
     bl.regions['region04'] = copy.copy(r)
+
+    # --- 8
 
     r = bl.regions['region01']
     l = r.add_layer('triax')
@@ -168,6 +182,8 @@ def configure():
     l.thickness = np.array([0.008, 0.003, 0.0015, 0.0011])
     l.angle = np.zeros(4)
 
+    # --- 9
+
     bl.init_webs(2, [[2, 3], [1, 4]])
     w = bl.webs['web00']
     l = w.add_layer('triax')
@@ -184,6 +200,8 @@ def configure():
     bl.check_consistency()
 
     return bl, uniax
+
+# --- 10
 
 
 def configure_incorrect():
