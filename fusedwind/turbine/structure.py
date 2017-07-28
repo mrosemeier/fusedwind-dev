@@ -1285,6 +1285,9 @@ class BladeStructureProperties(Component):
     pacc_ps_curv: array
         curvature of lower side pitch axis aft cap center in
         global coordinate system
+    thickness_diff: array
+        Difference between section thickness
+        and material thickness at each DP
     """
 
     def __init__(self, sdim, st3d, capDPs):
@@ -1333,17 +1336,28 @@ class BladeStructureProperties(Component):
             self._webs.append(layers)
 
         for i in range(self.nDP-1):
-            self.add_output('r%02d_width' % i, np.zeros(self.nsec), desc='Region%i width' % i)
-            self.add_output('r%02d_thickness' % i, np.zeros(self.nsec), desc='Region%i thickness' % i)
+            self.add_output('r%02d_width' % i, np.zeros(self.nsec),
+                            desc='Region%i width' % i)
+            self.add_output('r%02d_thickness' % i, np.zeros(self.nsec),
+                            desc='Region%i thickness' % i)
 
         for i, w in enumerate(st3d['web_def']):
-            self.add_output('web_angle%02d' % i, np.zeros(self.nsec), desc='Web%02d angle' % i)
-            self.add_output('web_offset%02d' % i, np.zeros((self.nsec, 2)), desc='Web%02d offset' % i)
+            self.add_output('web_angle%02d' % i, np.zeros(self.nsec),
+                            desc='Web%02d angle' % i)
+            self.add_output('web_offset%02d' % i, np.zeros((self.nsec, 2)),
+                            desc='Web%02d offset' % i)
 
-        self.add_output('pacc_ss', np.zeros((self.nsec, 2)), desc='upper side pitch axis aft cap center')
-        self.add_output('pacc_ps', np.zeros((self.nsec, 2)), desc='lower side pitch axis aft cap center')
-        self.add_output('pacc_ss_curv', np.zeros(self.nsec), desc='upper side pitch axis aft cap center curvature')
-        self.add_output('pacc_ps_curv', np.zeros(self.nsec), desc='lower side pitch axis aft cap center curvature')
+        self.add_output('pacc_ss', np.zeros((self.nsec, 2)),
+                        desc='upper side pitch axis aft cap center')
+        self.add_output('pacc_ps', np.zeros((self.nsec, 2)),
+                        desc='lower side pitch axis aft cap center')
+        self.add_output('pacc_ss_curv', np.zeros(self.nsec),
+                        desc='upper side pitch axis aft cap center curvature')
+        self.add_output('pacc_ps_curv', np.zeros(self.nsec),
+                        desc='lower side pitch axis aft cap center curvature')
+        self.add_output('thickness_diff', np.zeros((self.nsec, self.nDP/2)),
+                        desc='Difference between section thickness'
+                             'and material thickness at each DP')
 
         self.dp_xyz = np.zeros([self.nsec, self.nDP, 3])
         self.dp_s01 = np.zeros([self.nsec, self.nDP])
@@ -1390,3 +1404,26 @@ class BladeStructureProperties(Component):
             t[:] = 0.
             for lname in reg:
                 t += np.maximum(0., params[lname + 'T'])
+
+        # compute difference between airfoil thickness and
+        # total material thickness at the different DPs
+        nr = int(self.nDP/2)
+        ri = range(self.nDP-1)
+        self.thickness_diff = np.zeros((self.nsec, nr))
+        self.shape_thickness = np.zeros((self.nsec, nr))
+        # loop DP points from TE to LE
+        for i in range(self.nsec):
+            for j in range(nr):
+                # compute shape thickness assuming symmetric DPs!
+                x1, y1 = self.dp_xyz[i, j, :2] * params['blade_length']
+                x2, y2 = self.dp_xyz[i, -(j+1), :2] * params['blade_length']
+                shape_thickness = ((x1 - x2)**2 + (y1 - y2)**2)**.5
+                # material thickness of lower/upper side
+                # based on first DP of every region
+                print 'region', ri[j], ri[-(j+1)]
+                t1 = unknowns['r%02d_thickness' % (ri[j])][i]
+                t2 = unknowns['r%02d_thickness' % (ri[-(j+1)])][i]
+                thick_max = t1 + t2
+                self.shape_thickness[i, j] = shape_thickness
+                self.thickness_diff[i, j] = shape_thickness - thick_max
+        unknowns['thickness_diff'] = self.thickness_diff
