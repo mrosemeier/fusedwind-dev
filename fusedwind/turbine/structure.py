@@ -680,9 +680,10 @@ class ComputeDPsParam2(object):
         DPs[:, 0] = -1.
         DPs[:, -1] = 1.
 
-        # extra TE regions
-        DPs[:, 1] = -0.99
-        DPs[:, -2] = 0.99
+        # set extra TE regions if user hasn't specified anything
+        if (DPs[:, 1] == 0.).all():
+            DPs[:, 1] = -0.99
+            DPs[:, -2] = 0.99
 
         for i in range(self.ni):
             af = self.afs[i]
@@ -842,6 +843,7 @@ class ComputeDPsParam2(object):
             for d in DP:
                 plt.plot(d[2], d[0], 'ro')
 
+        self.DPs_xyz = np.asarray(DPs)
         #plt.show()
 
 
