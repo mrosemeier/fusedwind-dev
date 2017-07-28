@@ -1111,6 +1111,7 @@ class DPsParam2(Component):
         self.add_param('x_st', np.zeros(size))
         self.add_param('y_st', np.zeros(size))
         self.add_param('z_st', np.zeros(size))
+        self.add_param('blade_scale', 1.)
         self.add_param('struct_angle', st3d['struct_angle'])
         self._param2_names = ['cap_width_ss',
                               'cap_width_ps',
@@ -1139,7 +1140,7 @@ class DPsParam2(Component):
         self._DPs.z = params['z_st']
         self._DPs.surface = params['blade_surface_st']
         for name in self._param2_names:
-            setattr(self._DPs, name, params[name])
+            setattr(self._DPs, name, params[name] / params['blade_scale'])
         self._DPs.struct_angle = params['struct_angle']
         self._DPs.compute()
 
@@ -1167,7 +1168,7 @@ class SplinedBladeStructureParam2(SplinedBladeStructureBase):
         self.nsec = st3d['s'].shape[0]
         promotes = ['blade_surface_st',
                     'x_st', 'y_st', 'z_st',
-                    'struct_angle']
+                    'struct_angle', 'blade_scale']
         for i in range(nDP):
             name = 'DP%02d' % i
             promotes.append(name)
