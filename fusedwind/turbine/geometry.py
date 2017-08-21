@@ -478,8 +478,12 @@ class FFDSpline(Component):
         self._iCx1 = None
         if self.Cx[0] > 0.:
             self._iCx0 = np.where(np.abs(self.s-self.Cx[0])==np.abs(self.s-self.Cx[0]).min())[0]
+            if isinstance(self._iCx0, np.ndarray):
+                self._iCx0 = self._iCx0[0]
         if self.Cx[-1] < 1.:
             self._iCx1 = np.where(np.abs(self.s-self.Cx[-1])==np.abs(self.s-self.Cx[-1]).min())[0]+1
+            if isinstance(self._iCx1, np.ndarray):
+                self._iCx1 = self._iCx1[0]
         self.Pinit = P
         self._size = P.shape[0]
         self.scaler = scaler
