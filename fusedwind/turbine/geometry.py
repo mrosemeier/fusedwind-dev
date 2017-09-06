@@ -236,7 +236,7 @@ def read_blade_planform(filename):
     pf['athick'] = pf['rthick'] * pf['chord']
     pf['p_le'] = data[:, 8]
     try:
-        pf['p_le'] = data[:, 9]
+        pf['dy'] = data[:, 9]
     except:
         pf['dy'] = np.zeros(data.shape[0])
 
