@@ -203,6 +203,7 @@ def read_blade_planform(filename):
     |  chord: chord distribution
     |  rthick: relative thickness distribution
     |  p_le: pitch axis aft leading edge distribution
+    |  dy: vertical offset of cross-section
 
     parameters
     ----------
@@ -234,6 +235,10 @@ def read_blade_planform(filename):
     pf['rthick'] /= pf['rthick'].max()
     pf['athick'] = pf['rthick'] * pf['chord']
     pf['p_le'] = data[:, 8]
+    try:
+        pf['p_le'] = data[:, 9]
+    except:
+        pf['dy'] = np.zeros(data.shape[0])
 
     return pf
 
@@ -251,6 +256,7 @@ def write_blade_planform(pf, filename):
     |  chord: chord distribution
     |  rthick: relative thickness distribution
     |  p_le: pitch axis aft leading edge distribution
+    |  dy: vertical offset of cross-section
 
     parameters
     ----------
@@ -264,9 +270,13 @@ def write_blade_planform(pf, filename):
     s = calculate_length(data[:, [0, 1, 2]])
 
     names = ['x', 'y', 'z', 'rot_x', 'rot_y', 'rot_z',
-             'chord', 'rthick', 'p_le']
+             'chord', 'rthick', 'p_le', 'dy']
     for i, name in enumerate(names):
-        data[:, i] = pf[name]
+        try:
+            data[:, i] = pf[name]
+        except:
+            print 'failed writing %s - assuming zeros' % name
+            data[:, i] = np.zeros(s.shape[0])
     fid = open(filename, 'w')
     exp_prec = 15             # exponential precesion
     col_width = exp_prec + 10  # column width required for exp precision
@@ -293,6 +303,7 @@ class BladePlanformWriter(Component):
         self.add_param('rot_y', np.zeros(size_in))
         self.add_param('rot_z', np.zeros(size_in))
         self.add_param('p_le', np.zeros(size_in))
+        self.add_param('dy', np.zeros(size_in))
 
         self._exec_count = 0
 
@@ -310,6 +321,7 @@ class BladePlanformWriter(Component):
         pf['chord'] = params['chord']
         pf['rthick'] = params['rthick']
         pf['p_le'] = params['p_le']
+        pf['dy'] = params['dy']
 
         write_blade_planform(pf, self.filebase + '_it%i.pfd'%self._exec_count)
 
@@ -335,6 +347,7 @@ def redistribute_planform(pf, dist=[], s=None, spline_type='akima'):
         |  chord: chord distribution
         |  rthick: relative thickness distribution
         |  p_le: pitch axis aft leading edge distribution
+        |  dy: vertical offset of cross-section
     dist: list
         list of control points with the form
 
@@ -380,6 +393,8 @@ class PGLRedistributedPlanform(Component):
         relative thickness distribution
     p_le: array
         pitch axis aft leading edge distribution
+    dy: array
+        vertical offset of cross-section
     """
 
     def __init__(self, name, size_in, s_new):
@@ -408,6 +423,7 @@ class PGLRedistributedPlanform(Component):
         self.add_param('rot_y', np.zeros(size_in))
         self.add_param('rot_z', np.zeros(size_in))
         self.add_param('p_le', np.zeros(size_in))
+        self.add_param('dy', np.zeros(size_in))
 
         self.s_new = s_new
         size_out = s_new.shape[0]
@@ -422,6 +438,7 @@ class PGLRedistributedPlanform(Component):
         self.add_output('rot_y'+name, np.zeros(size_out))
         self.add_output('rot_z'+name, np.zeros(size_out))
         self.add_output('p_le'+name, np.zeros(size_out))
+        self.add_output('dy'+name, np.zeros(size_out))
         self.add_output('athick'+name, np.zeros(size_out))
 
 
@@ -441,6 +458,7 @@ class PGLRedistributedPlanform(Component):
         pf_in['chord'] = params['chord']
         pf_in['rthick'] = params['rthick']
         pf_in['p_le'] = params['p_le']
+        pf_in['dy'] = params['dy']
 
         if _PGL_installed:
             pf = redistribute_planform(pf_in, s=self.s_new, spline_type=self.spline_type)
@@ -600,6 +618,7 @@ class SplinedBladePlanform(Group):
             |  chord: chord distribution
             |  rthick: relative thickness distribution
             |  p_le: pitch axis aft leading edge distribution
+            |  dy: vertical offset of cross-section
 
         """
         super(SplinedBladePlanform, self).__init__()
@@ -625,6 +644,7 @@ class SplinedBladePlanform(Group):
             |  chord: chord distribution
             |  rthick: relative thickness distribution
             |  p_le: pitch axis aft leading edge distribution
+            |  dy: vertical offset of cross-section
         Cx: array
             spanwise distribution of control points
         spline_type: str
@@ -632,7 +652,7 @@ class SplinedBladePlanform(Group):
             | bezier
             | pchip
         """
-        if name not in ['x', 'y', 'rot_x', 'rot_y', 'rot_z', 'chord', 'rthick', 'p_le']:
+        if name not in ['x', 'y', 'rot_x', 'rot_y', 'rot_z', 'chord', 'rthick', 'p_le', 'dy']:
             raise RuntimeError('%s not in planform dictionary' % name)
 
 
@@ -706,7 +726,7 @@ class PGLLoftedBladeSurface(Component):
 
         names = ['s', 'x', 'y', 'z',
                  'rot_x', 'rot_y', 'rot_z',
-                 'chord', 'rthick','p_le']
+                 'chord', 'rthick','p_le', 'dy']
         for name in names:
             self.add_param(name+suffix, np.zeros(size_in))
 
@@ -784,6 +804,7 @@ class PGLLoftedBladeSurface(Component):
         pf['chord'] = params['chord' + self._suffix]
         pf['rthick'] = params['rthick' + self._suffix]
         pf['p_le'] = params['p_le' + self._suffix]
+        pf['dy'] = params['dy' + self._suffix]
         self.pgl_surf.pf = pf
         self.pgl_surf.build_blade()
 
