@@ -1421,7 +1421,6 @@ class BladeStructureProperties(Component):
                 shape_thickness = ((x1 - x2)**2 + (y1 - y2)**2)**.5
                 # material thickness of lower/upper side
                 # based on first DP of every region
-                print 'region', ri[j], ri[-(j+1)]
                 t1 = unknowns['r%02d_thickness' % (ri[j])][i]
                 t2 = unknowns['r%02d_thickness' % (ri[-(j+1)])][i]
                 thick_max = t1 + t2
