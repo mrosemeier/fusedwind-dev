@@ -691,7 +691,7 @@ class SplinedBladePlanform(Group):
         """
         add IndepVarComp's for all remaining planform variables
         """
-        indeps = list(set(['s', 'x', 'y', 'z', 'rot_x', 'rot_y', 'rot_z', 'chord', 'rthick', 'p_le'])-set(self._vars))
+        indeps = list(set(['s', 'x', 'y', 'z', 'rot_x', 'rot_y', 'rot_z', 'chord', 'rthick', 'p_le', 'dy'])-set(self._vars))
 
         for name in indeps:
             self.add(name+'_c', IndepVarComp(name, self.pfinit[name]), promotes=[name])
