@@ -266,7 +266,7 @@ def write_blade_planform(pf, filename):
         path to file containing planform data
     """
 
-    data = np.zeros((pf['x'].shape[0], 9))
+    data = np.zeros((pf['x'].shape[0], 10))
     s = calculate_length(data[:, [0, 1, 2]])
 
     names = ['x', 'y', 'z', 'rot_x', 'rot_y', 'rot_z',
@@ -694,7 +694,11 @@ class SplinedBladePlanform(Group):
         indeps = list(set(['s', 'x', 'y', 'z', 'rot_x', 'rot_y', 'rot_z', 'chord', 'rthick', 'p_le', 'dy'])-set(self._vars))
 
         for name in indeps:
-            self.add(name+'_c', IndepVarComp(name, self.pfinit[name]), promotes=[name])
+            try:
+                self.add(name+'_c', IndepVarComp(name, self.pfinit[name]), promotes=[name])
+            except:
+                self.add(name+'_c', IndepVarComp(name, np.zeros(self.pfinit['s'].shape[0])), promotes=[name])
+                print 'Failed adding IndepVarComp for %s, assuming zeros' % name
 
 
         c = self.add('smax_c', ComputeSmax(self.pfinit), promotes=['blade_curve_length'])
