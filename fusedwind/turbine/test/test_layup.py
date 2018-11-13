@@ -442,7 +442,7 @@ class LayupTests(unittest.TestCase):
 
     def test_check_consistency_incorrect(self):
         self.bl_inc = configure_incorrect()
-        self.assertEqual(self.bl_inc._warns, 15, None)
+        self.assertEqual(self.bl_inc._warns, 18, None)
 
     def test_create_bladestructure_division_points(self):
         self.assertEqual(np.testing.assert_array_equal(
@@ -496,6 +496,7 @@ class LayupTests(unittest.TestCase):
                           uniax.rho,
                           ]), None)
         shutil.rmtree(self.test_dir)
+
 
 if __name__ == '__main__':
     # configure()
