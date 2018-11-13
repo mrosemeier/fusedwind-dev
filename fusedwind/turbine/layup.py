@@ -33,6 +33,10 @@ class Material(object):
     :param G13: Shear Modules parallel to fiber direction and out of lamina plane
     :param G23: Shear Modules perpendicular to fiber direction and out of lamina plane
     :param rho: Density 
+    :param cte1: Coefficient of thermal expansion parallel (||) to fiber direction
+    :param cte2: Coefficient of thermal perpendicular (_|_) to fiber direction (in lamina plane)
+    :param cte3: Coefficient of thermal perpendicular (_|_) to fiber direction (out of lamina plane)
+
     :param failcrit: Failure criterion to be used for this material ('maximum_strain', 'maximum_stress', 'tsai_wu')
     :type failcrit: string 
 
@@ -80,6 +84,9 @@ class Material(object):
         self.G12 = None
         self.G13 = None
         self.G23 = None
+        self.cte1 = None
+        self.cte2 = None
+        self.cte3 = None
         self.rho = None
         self.s11_t = None
         self.s22_t = None
@@ -112,12 +119,13 @@ class Material(object):
         self.nu21 = self.nu12 * self.E2 / self.E1
         self.nu32 = self.nu23 * self.E3 / self.E2
 
-    def set_props_iso(self, E1, nu12, rho):
+    def set_props_iso(self, E1, nu12, rho, cte1=0.):
         ''' Sets isotropic material properties.
         '''
         self.rho = rho
         self.E1 = E1
         self.nu12 = nu12
+        self.cte1 = cte1
 
         # derived
         self.E2 = self.E1
@@ -129,7 +137,8 @@ class Material(object):
         self.G13 = self.G12
         self._minor_poissons_ratios()
 
-    def set_props_uniax(self, E1, E2, nu12, G12, nu23, rho):
+    def set_props_uniax(self, E1, E2, nu12, G12, nu23, rho,
+                        cte1=0., cte2=0.):
         ''' Sets material properties for uniax.
         '''
         self.rho = rho
@@ -138,6 +147,8 @@ class Material(object):
         self.nu12 = nu12
         self.G12 = G12
         self.nu23 = nu23
+        self.cte1 = cte1
+        self.cte2 = cte2
 
         # derived
         self.E3 = self.E2
@@ -147,7 +158,8 @@ class Material(object):
         self.G13 = self.G12
         self._minor_poissons_ratios()
 
-    def set_props(self, E1, E2, E3, nu12, nu13, nu23, G12, G13, G23, rho):
+    def set_props(self, E1, E2, E3, nu12, nu13, nu23, G12, G13, G23, rho,
+                  cte1=0., cte2=0., cte3=0.):
         ''' Set 3D material properties.
         '''
         self.rho = rho
@@ -160,6 +172,9 @@ class Material(object):
         self.G12 = G12
         self.G13 = G13
         self.G23 = G23
+        self.cte1 = cte1
+        self.cte2 = cte2
+        self.cte3 = cte3
 
         self._minor_poissons_ratios()
 
