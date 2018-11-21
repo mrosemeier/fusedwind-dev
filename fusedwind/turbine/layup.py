@@ -1068,6 +1068,7 @@ def create_bladelayup(st3d):
             layer = bl.regions['region%02d' % ir].add_layer(lay[:-2])
             layer.thickness = np.squeeze(reg['thicknesses'][:, il])
             layer.angle = np.squeeze(reg['angles'][:, il])
+        bl.regions['region%02d' % ir].init_stack()
 
     bl.init_webs(nw=len(st3d['web_def']), iwebs=st3d['web_def'])
 
@@ -1076,6 +1077,7 @@ def create_bladelayup(st3d):
             layer = bl.webs['web%02d' % ir].add_layer(lay[:-2])
             layer.thickness = np.squeeze(reg['thicknesses'][:, il])
             layer.angle = np.squeeze(reg['angles'][:, il])
+        bl.webs['web%02d' % ir].init_stack()
 
     if st3d['bond_def']:
         bl.init_bonds(nb=1, ibonds=st3d['bond_def'])
@@ -1085,6 +1087,7 @@ def create_bladelayup(st3d):
                 layer = bl.bonds['bond%02d' % ir].add_layer(lay[:-2])
                 layer.thickness = np.squeeze(reg['thicknesses'][:, il])
                 layer.angle = np.squeeze(reg['angles'][:, il])
+            bl.bonds['bond%02d' % ir].init_stack()
 
     bl.check_consistency()
 
