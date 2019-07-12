@@ -126,6 +126,8 @@ class Material(object):
         self.E1 = E1
         self.nu12 = nu12
         self.cte1 = cte1
+        self.cte2 = cte1
+        self.cte3 = cte1
 
         # derived
         self.E2 = self.E1
@@ -194,7 +196,11 @@ class Material(object):
                          self.G12,
                          self.G13,
                          self.G23,
-                         self.rho]
+                         self.rho,
+                         self.cte1,
+                         self.cte2,
+                         self.cte3,
+                         ]
 
         matprops_labels = ['E1',
                            'E2',
@@ -205,7 +211,10 @@ class Material(object):
                            'G12',
                            'G13',
                            'G23',
-                           'rho']
+                           'rho',
+                           'cte1',
+                           'cte2',
+                           'cte3']
 
         return matprops_list, matprops_labels
 
@@ -1032,16 +1041,31 @@ def create_bladelayup(st3d):
 
     for i, k in enumerate(st3d['materials'].iterkeys()):
         mat = bl.add_material(k)
-        mat.set_props(E1=st3d['matprops'][i][0],
-                      E2=st3d['matprops'][i][1],
-                      E3=st3d['matprops'][i][2],
-                      nu12=st3d['matprops'][i][3],
-                      nu13=st3d['matprops'][i][4],
-                      nu23=st3d['matprops'][i][5],
-                      G12=st3d['matprops'][i][6],
-                      G13=st3d['matprops'][i][7],
-                      G23=st3d['matprops'][i][8],
-                      rho=st3d['matprops'][i][9])
+        if len(st3d['matprops'][i]) == 10:
+            mat.set_props(E1=st3d['matprops'][i][0],
+                          E2=st3d['matprops'][i][1],
+                          E3=st3d['matprops'][i][2],
+                          nu12=st3d['matprops'][i][3],
+                          nu13=st3d['matprops'][i][4],
+                          nu23=st3d['matprops'][i][5],
+                          G12=st3d['matprops'][i][6],
+                          G13=st3d['matprops'][i][7],
+                          G23=st3d['matprops'][i][8],
+                          rho=st3d['matprops'][i][9])
+        elif len(st3d['matprops'][i]) == 13:
+            mat.set_props(E1=st3d['matprops'][i][0],
+                          E2=st3d['matprops'][i][1],
+                          E3=st3d['matprops'][i][2],
+                          nu12=st3d['matprops'][i][3],
+                          nu13=st3d['matprops'][i][4],
+                          nu23=st3d['matprops'][i][5],
+                          G12=st3d['matprops'][i][6],
+                          G13=st3d['matprops'][i][7],
+                          G23=st3d['matprops'][i][8],
+                          rho=st3d['matprops'][i][9],
+                          cte1=st3d['matprops'][i][10],
+                          cte2=st3d['matprops'][i][11],
+                          cte3=st3d['matprops'][i][12])
         mat.set_resists_strains(failcrit=st3d['failcrit'][i],
                                 e11_t=st3d['failmat'][i][9],
                                 e22_t=st3d['failmat'][i][10],
