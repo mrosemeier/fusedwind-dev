@@ -61,7 +61,8 @@ def read_bladestructure(filebase):
             if version != st3d['version'] and st3d['version'] is not None:
                 print('Warning: Files not all consistent in version %s!' % version)
 
-            st3d['version'] = version # version 0 for files before file version tagging
+            # version 0 for files before file version tagging
+            st3d['version'] = version
         return version
 
     def _check_bondline(headerline):
@@ -92,7 +93,7 @@ def read_bladestructure(filebase):
     st3d['matprops'] = data
 
     # read failmat file
-    failcrit = {1:'maximum_strain', 2:'maximum_stress', 3:'tsai_wu'}
+    failcrit = {1: 'maximum_strain', 2: 'maximum_stress', 3: 'tsai_wu'}
     fid = open(filebase + '.failmat', 'r')
     first_line = fid.readline().split()[1:]
     version = _check_file_version(st3d, first_line)
@@ -174,7 +175,7 @@ def read_bladestructure(filebase):
         data = np.loadtxt(pfid)
         assert np.allclose(st3d['s'], data[:, 0], rtol=1.e-5)
         for i, name in enumerate(header[1:]):
-            st3d[name] = data[:, i+1]
+            st3d[name] = data[:, i + 1]
         pfid.close()
 
     # read the st3d files containing thicknesses and orientations
@@ -195,7 +196,7 @@ def read_bladestructure(filebase):
         layers = lheader[1:]
         nl = len(layers)
 
-        if version==0:
+        if version == 0:
             # check that layer names are of the type <%s><%02d>
             lnames = []
             basenames = []
@@ -217,8 +218,8 @@ def read_bladestructure(filebase):
             r['layers'] = layers
 
         r['thicknesses'] = cldata[:, 1:nl + 1]
-        if cldata.shape[1] == nl*2 + 1:
-            r['angles'] = cldata[:, nl + 1:2*nl+1 + 2]
+        if cldata.shape[1] == nl * 2 + 1:
+            r['angles'] = cldata[:, nl + 1:2 * nl + 1 + 2]
         else:
             r['angles'] = np.zeros((cldata.shape[0], nl))
         st3d['regions'].append(r)
@@ -262,8 +263,8 @@ def read_bladestructure(filebase):
             r['layers'] = layers
 
         r['thicknesses'] = cldata[:, 1:nl + 1]
-        if cldata.shape[1] == nl*2 + 1:
-            r['angles'] = cldata[:, nl + 1:2*nl+1 + 2]
+        if cldata.shape[1] == nl * 2 + 1:
+            r['angles'] = cldata[:, nl + 1:2 * nl + 1 + 2]
         else:
             r['angles'] = np.zeros((cldata.shape[0], nl))
         st3d['webs'].append(r)
@@ -286,8 +287,8 @@ def read_bladestructure(filebase):
             r['layers'] = layers
 
             r['thicknesses'] = cldata[:, 1:nl + 1]
-            if cldata.shape[1] == nl*2 + 1:
-                r['angles'] = cldata[:, nl + 1:2*nl+1 + 2]
+            if cldata.shape[1] == nl * 2 + 1:
+                r['angles'] = cldata[:, nl + 1:2 * nl + 1 + 2]
             else:
                 r['angles'] = np.zeros((cldata.shape[0], nl))
             st3d['bonds'].append(r)
@@ -312,8 +313,12 @@ def write_bladestructure(st3d, filebase):
     fid = open(filebase + '.mat', 'w')
     fid.write('# version %s\n' % st3d['version'])
     fid.write('# %s\n' % (' '.join(st3d['materials'].keys())))
-    fid.write('# E1 E2 E3 nu12 nu13 nu23 G12 G13 G23 rho\n')
-    fmt = ' '.join(10*['%.20e'])
+    if len(st3d['matprops'][0]) == 10:
+        fid.write('# E1 E2 E3 nu12 nu13 nu23 G12 G13 G23 rho\n')
+        fmt = ' '.join(10 * ['%.20e'])
+    elif len(st3d['matprops'][0]) == 13:
+        fid.write('# E1 E2 E3 nu12 nu13 nu23 G12 G13 G23 rho cte1 cte2 cte3\n')
+        fmt = ' '.join(13 * ['%.20e'])
     np.savetxt(fid, st3d['matprops'], fmt=fmt)
 
     failcrit = dict(maximum_strain=1, maximum_stress=2, tsai_wu=3)
@@ -323,10 +328,10 @@ def write_bladestructure(st3d, filebase):
     fid.write('# failcrit s11_t s22_t s33_t s11_c s22_c s33_c'
               't12 t13 t23 e11_t e22_t e33_t e11_c e22_c e33_c g12 g13 g23'
               'gM0 C1a C2a C3a C4a\n')
-    data = np.zeros((st3d['failmat'].shape[0], st3d['failmat'].shape[1]+1))
+    data = np.zeros((st3d['failmat'].shape[0], st3d['failmat'].shape[1] + 1))
     data[:, 0] = [failcrit[mat] for mat in st3d['failcrit']]
     data[:, 1:] = st3d['failmat']
-    fmt = '%i ' + ' '.join(23*['%.20e'])
+    fmt = '%i ' + ' '.join(23 * ['%.20e'])
     np.savetxt(fid, np.asarray(data), fmt=fmt)
 
     # write dp3d file with region division points
@@ -356,7 +361,8 @@ def write_bladestructure(st3d, filebase):
         fid.write('# cap_DPs %s\n' % ('  '.join(map(str, st3d['cap_DPs']))))
         fid.write('# te_DPs %s\n' % ('  '.join(map(str, st3d['te_DPs']))))
         fid.write('# le_DPs %s\n' % ('  '.join(map(str, st3d['le_DPs']))))
-        fid.write('# dominant_regions %s\n' % ('  '.join(map(str, st3d['dominant_regions']))))
+        fid.write('# dominant_regions %s\n' %
+                  ('  '.join(map(str, st3d['dominant_regions']))))
         header = ['s', 'cap_center_ps',
                        'cap_center_ss',
                        'cap_width_ps',
@@ -602,7 +608,7 @@ class ComputeDPsParam2(object):
             self.cap_center_ps = st3d['cap_center_ps']
             self.struct_angle = st3d['struct_angle']
             for i, web_ix in enumerate(self.web_def[1:]):
-                name = 'w%02dpos' % (i+1)
+                name = 'w%02dpos' % (i + 1)
                 setattr(self, name, st3d[name])
         except:
             print 'failed reading st3d'
@@ -648,9 +654,9 @@ class ComputeDPsParam2(object):
             y = self.y
         elif self.ref_axis == 'linear':
             x = np.interp(self.z, np.linspace(0, 1, self.ni),
-                                  np.linspace(self.x[0], self.x[-1], self.ni))
+                          np.linspace(self.x[0], self.x[-1], self.ni))
             y = np.interp(self.z, np.linspace(0, 1, self.ni),
-                                  np.linspace(self.y[0], self.y[-1], self.ni))
+                          np.linspace(self.y[0], self.y[-1], self.ni))
         else:
             raise RuntimeError('ref_axis %s not understood' % self.ref_axis)
 
@@ -695,7 +701,7 @@ class ComputeDPsParam2(object):
             s0 = sLE - w0
             s1 = sLE + w0
             s0 = -1.0 + s0 / sLE
-            s1 = (s1-sLE) / (1.0-sLE)
+            s1 = (s1 - sLE) / (1.0 - sLE)
             DPs[i, self.le_DPs[0]] = s0
             DPs[i, self.le_DPs[1]] = s1
 
@@ -725,9 +731,9 @@ class ComputeDPsParam2(object):
             s_ccL = af.interp_x(x_cc, 'lower')
             s_ccU = af.interp_x(x_cc, 'upper')
             for j, web_ix in enumerate(self.web_def[1:]):
-                wacc = getattr(self, 'w%02dpos' % (j+1))[i]
-                swL = af.interp_x(x_cc+wacc, 'lower')
-                swU = af.interp_x(x_cc+wacc, 'upper')
+                wacc = getattr(self, 'w%02dpos' % (j + 1))[i]
+                swL = af.interp_x(x_cc + wacc, 'lower')
+                swU = af.interp_x(x_cc + wacc, 'upper')
                 DPs[i, web_ix[0]] = af.s_to_11(swL)
                 DPs[i, web_ix[1]] = af.s_to_11(swU)
 
@@ -760,31 +766,33 @@ class ComputeDPsParam2(object):
                 except:
                     min_width = self.min_width
                 if self.afs[i].s_to_01(DPs[i, j]) > self.afs[i].sLE:
-                    DPs[i, j] = self.afs[i].s_to_11(self.afs[i].sLE) - min_width
+                    DPs[i, j] = self.afs[i].s_to_11(
+                        self.afs[i].sLE) - min_width
             for j in ss:
                 try:
                     min_width = self.min_width[j]
                 except:
                     min_width = self.min_width
                 if self.afs[i].s_to_01(DPs[i, j]) < self.afs[i].sLE:
-                    DPs[i, j] = self.afs[i].s_to_11(self.afs[i].sLE)  + min_width
+                    DPs[i, j] = self.afs[i].s_to_11(
+                        self.afs[i].sLE) + min_width
 
         # check for negative region widths
         for i in range(self.ni):
-            for j in range(1, DPs.shape[1]-1):
+            for j in range(1, DPs.shape[1] - 1):
                 try:
                     min_width = self.min_width[j]
                 except:
                     min_width = self.min_width
-                if np.diff(DPs[i, [j, j+1]]) < 0.:
-                    if j-1 in self.dominant_regions and j+1 not in self.cap_DPs:
-                        DPs[i, j+1] = DPs[i, j] + min_width
-                    elif j+1 in self.dominant_regions and j not in self.cap_DPs:
-                        DPs[i, j] = DPs[i, j+1] - min_width
+                if np.diff(DPs[i, [j, j + 1]]) < 0.:
+                    if j - 1 in self.dominant_regions and j + 1 not in self.cap_DPs:
+                        DPs[i, j + 1] = DPs[i, j] + min_width
+                    elif j + 1 in self.dominant_regions and j not in self.cap_DPs:
+                        DPs[i, j] = DPs[i, j + 1] - min_width
                     else:
-                        mid = 0.5 * (DPs[i, j] + DPs[i, j+1])
+                        mid = 0.5 * (DPs[i, j] + DPs[i, j + 1])
                         DPs[i, j] = mid - min_width
-                        DPs[i, j+1] = mid + min_width
+                        DPs[i, j + 1] = mid + min_width
 
     def plot(self, isec=None, ifig=1, coordsys='rotor'):
 
@@ -844,7 +852,7 @@ class ComputeDPsParam2(object):
                 plt.plot(d[2], d[0], 'ro')
 
         self.DPs_xyz = np.asarray(DPs)
-        #plt.show()
+        # plt.show()
 
 
 class SplinedBladeStructureBase(Group):
@@ -868,10 +876,12 @@ class SplinedBladeStructureBase(Group):
         self.st3dinit = st3d
 
         # add materials properties array ((10, nmat))
-        self.add('matprops_c', IndepVarComp('matprops', st3d['matprops']), promotes=['*'])
+        self.add('matprops_c', IndepVarComp(
+            'matprops', st3d['matprops']), promotes=['*'])
 
         # add materials strength properties array ((18, nmat))
-        self.add('failmat_c', IndepVarComp('failmat', st3d['failmat']), promotes=['*'])
+        self.add('failmat_c', IndepVarComp(
+            'failmat', st3d['failmat']), promotes=['*'])
 
     def _add_mat_spline(self, names, Cx, spline_type='bezier', scaler=1.):
         """
@@ -909,14 +919,17 @@ class SplinedBladeStructureBase(Group):
                 try:
                     ireg = int(name[1:3])
                     try:
-                        split = re.match(r"([a-z]+)([0-9]+)([a-z]+)", name[3:], re.I).groups()
+                        split = re.match(
+                            r"([a-z]+)([0-9]+)([a-z]+)", name[3:], re.I).groups()
                         l_index = split[1]
                     except:
-                        split = re.match(r"([a-z]+)([a-z]+)", name[3:], re.I).groups()
-                    layername = split[0]+split[1]
+                        split = re.match(
+                            r"([a-z]+)([a-z]+)", name[3:], re.I).groups()
+                    layername = split[0] + split[1]
                     stype = split[-1]
                 except:
-                    raise RuntimeError('Variable name %s not understood' % name)
+                    raise RuntimeError(
+                        'Variable name %s not understood' % name)
             else:
                 raise RuntimeError('Variable name %s not understood' % name)
 
@@ -937,23 +950,24 @@ class SplinedBladeStructureBase(Group):
             elif stype == 'A':
                 var = r['angles'][:, ilayer]
             c = self.add(name + '_s', FFDSpline(name, st3d['s'],
-                                                   var,
-                                                   Cx, scaler=scaler),
-                                                   promotes=[name])
+                                                var,
+                                                Cx, scaler=scaler),
+                         promotes=[name])
             c.spline_options['spline_type'] = spline_type
             c.set_spline(spline_type)
             tvars.append(name)
 
         self._vars.extend(tvars)
         # finally add the IndepVarComp and make the connections
-        self.add(names[0] + '_c', IndepVarComp(names[0] + '_C', np.zeros(len(Cx))), promotes=['*'])
+        self.add(names[0] + '_c', IndepVarComp(names[0] +
+                                               '_C', np.zeros(len(Cx))), promotes=['*'])
         for varname in tvars:
             self.connect(names[0] + '_C', varname + '_s.' + varname + '_C')
 
     def configure(self):
 
         print 'SplinedBladeStructure: No harm done, but configure is depreciated\n' + \
-              'and replaced by pre_setup called automatically by OpenMDAO.\n'+\
+              'and replaced by pre_setup called automatically by OpenMDAO.\n' +\
               'Ensure that you have OpenMDAO > v1.7.1 installed'
 
     def pre_setup(self, problem):
@@ -967,30 +981,37 @@ class SplinedBladeStructureBase(Group):
             varname = 'DP%02d' % i
             var = st3d['DPs'][:, i]
             if varname not in self._vars:
-                self.add(varname + '_c', IndepVarComp(varname, var), promotes=['*'])
+                self.add(varname + '_c',
+                         IndepVarComp(varname, var), promotes=['*'])
 
         for ireg, reg in enumerate(st3d['regions']):
             for i, lname in enumerate(reg['layers']):
                 varname = 'r%02d%s' % (ireg, lname)
-                if varname+'T' not in self._vars:
-                    self.add(varname + 'T_c', IndepVarComp(varname + 'T', reg['thicknesses'][:, i]), promotes=['*'])
-                if varname+'A' not in self._vars:
-                    self.add(varname + 'A_c', IndepVarComp(varname + 'A', reg['angles'][:, i]), promotes=['*'])
+                if varname + 'T' not in self._vars:
+                    self.add(varname + 'T_c', IndepVarComp(varname +
+                                                           'T', reg['thicknesses'][:, i]), promotes=['*'])
+                if varname + 'A' not in self._vars:
+                    self.add(varname + 'A_c', IndepVarComp(varname +
+                                                           'A', reg['angles'][:, i]), promotes=['*'])
         for ireg, reg in enumerate(st3d['webs']):
             for i, lname in enumerate(reg['layers']):
                 varname = 'w%02d%s' % (ireg, lname)
-                if varname+'T' not in self._vars:
-                    self.add(varname + 'T_c', IndepVarComp(varname + 'T', reg['thicknesses'][:, i]), promotes=['*'])
-                if varname+'A' not in self._vars:
-                    self.add(varname + 'A_c', IndepVarComp(varname + 'A', reg['angles'][:, i]), promotes=['*'])
+                if varname + 'T' not in self._vars:
+                    self.add(varname + 'T_c', IndepVarComp(varname +
+                                                           'T', reg['thicknesses'][:, i]), promotes=['*'])
+                if varname + 'A' not in self._vars:
+                    self.add(varname + 'A_c', IndepVarComp(varname +
+                                                           'A', reg['angles'][:, i]), promotes=['*'])
         if 'bonds' in st3d:
             for ireg, reg in enumerate(st3d['bonds']):
                 for i, lname in enumerate(reg['layers']):
                     varname = 'b%02d%s' % (ireg, lname)
-                    if varname+'T' not in self._vars:
-                        self.add(varname + 'T_c', IndepVarComp(varname + 'T', reg['thicknesses'][:, i]), promotes=['*'])
-                    if varname+'A' not in self._vars:
-                        self.add(varname + 'A_c', IndepVarComp(varname + 'A', reg['angles'][:, i]), promotes=['*'])
+                    if varname + 'T' not in self._vars:
+                        self.add(varname + 'T_c', IndepVarComp(varname +
+                                                               'T', reg['thicknesses'][:, i]), promotes=['*'])
+                    if varname + 'A' not in self._vars:
+                        self.add(varname + 'A_c', IndepVarComp(varname +
+                                                               'A', reg['angles'][:, i]), promotes=['*'])
 
 
 class SplinedBladeStructure(SplinedBladeStructureBase):
@@ -1078,22 +1099,24 @@ class SplinedBladeStructure(SplinedBladeStructureBase):
         tvars = []
         for name in names:
             try:
-                iDP = int(re.match(r"([a-z]+)([0-9]+)", name, re.I).groups()[-1])
+                iDP = int(re.match(r"([a-z]+)([0-9]+)",
+                                   name, re.I).groups()[-1])
             except:
                 raise RuntimeError('Variable name %s not understood' % name)
 
             var = st3d['DPs'][:, iDP]
             c = self.add(name + '_s', FFDSpline(name, st3d['s'],
-                                                      var,
-                                                      Cx, scaler=scaler),
-                                                      promotes=[name])
+                                                var,
+                                                Cx, scaler=scaler),
+                         promotes=[name])
             c.spline_options['spline_type'] = spline_type
             c.set_spline(spline_type)
             tvars.append(name)
         self._vars.extend(tvars)
 
         # add the IndepVarComp
-        self.add(names[0] + '_c', IndepVarComp(names[0] + '_C', np.zeros(len(Cx))), promotes=['*'])
+        self.add(names[0] + '_c', IndepVarComp(names[0] +
+                                               '_C', np.zeros(len(Cx))), promotes=['*'])
         for varname in tvars:
             self.connect(names[0] + '_C', varname + '_s.' + varname + '_C')
 
@@ -1172,7 +1195,8 @@ class SplinedBladeStructureParam2(SplinedBladeStructureBase):
         for i in range(nDP):
             name = 'DP%02d' % i
             promotes.append(name)
-        self.add('compute_dps', DPsParam2(st3d, sdim, config), promotes=promotes)
+        self.add('compute_dps', DPsParam2(
+            st3d, sdim, config), promotes=promotes)
 
         self._param2_names = self.compute_dps._param2_names
         # DPsParam2 always outputs DP00, DP01, so add them to
@@ -1211,9 +1235,11 @@ class SplinedBladeStructureParam2(SplinedBladeStructureBase):
             names = name
         # decode the name
         if names[0] in self._param2_names:
-            self._add_param2_spline(names, Cx, spline_type=spline_type, scaler=scaler)
+            self._add_param2_spline(
+                names, Cx, spline_type=spline_type, scaler=scaler)
         else:
-            self._add_mat_spline(names, Cx, spline_type=spline_type, scaler=scaler)
+            self._add_mat_spline(
+                names, Cx, spline_type=spline_type, scaler=scaler)
 
     def _add_param2_spline(self, names, Cx, spline_type='bezier', scaler=1.):
 
@@ -1222,16 +1248,17 @@ class SplinedBladeStructureParam2(SplinedBladeStructureBase):
         for name in names:
             var = st3d[name]
             c = self.add(name + '_s', FFDSpline(name, st3d['s'],
-                                                      var,
-                                                      Cx, scaler=scaler),
-                                                      promotes=[name])
+                                                var,
+                                                Cx, scaler=scaler),
+                         promotes=[name])
             c.spline_options['spline_type'] = spline_type
             c.set_spline(spline_type)
             tvars.append(name)
         self._vars.extend(tvars)
 
         # add the IndepVarComp
-        self.add(names[0] + '_c', IndepVarComp(names[0] + '_C', np.zeros(len(Cx))), promotes=['*'])
+        self.add(names[0] + '_c', IndepVarComp(names[0] +
+                                               '_C', np.zeros(len(Cx))), promotes=['*'])
         for varname in tvars:
             self.connect(names[0] + '_C', varname + '_s.' + varname + '_C')
             self.connect(varname, 'compute_dps.%s' % varname)
@@ -1240,12 +1267,13 @@ class SplinedBladeStructureParam2(SplinedBladeStructureBase):
 
         self.add('struct_angle_c', IndepVarComp('struct_angle',
                                                 self.st3dinit['struct_angle']),
-                                                promotes=['*'])
+                 promotes=['*'])
 
         for varname in self._param2_names:
             if varname not in self._vars:
                 var = self.st3dinit[varname]
-                self.add(varname + '_c', IndepVarComp(varname, var), promotes=['*'])
+                self.add(varname + '_c',
+                         IndepVarComp(varname, var), promotes=['*'])
                 self.connect(varname, 'compute_dps.%s' % varname)
         super(SplinedBladeStructureParam2, self).pre_setup(problem)
 
@@ -1336,7 +1364,7 @@ class BladeStructureProperties(Component):
                 layers.append(varname)
             self._webs.append(layers)
 
-        for i in range(self.nDP-1):
+        for i in range(self.nDP - 1):
             self.add_output('r%02d_width' % i, np.zeros(self.nsec),
                             desc='Region%i width' % i)
             self.add_output('r%02d_thickness' % i, np.zeros(self.nsec),
@@ -1356,7 +1384,7 @@ class BladeStructureProperties(Component):
                         desc='upper side pitch axis aft cap center curvature')
         self.add_output('pacc_ps_curv', np.zeros(self.nsec),
                         desc='lower side pitch axis aft cap center curvature')
-        self.add_output('thickness_diff', np.zeros((self.nsec, self.nDP/2)),
+        self.add_output('thickness_diff', np.zeros((self.nsec, self.nDP / 2)),
                         desc='Difference between section thickness'
                              'and material thickness at each DP')
 
@@ -1378,10 +1406,10 @@ class BladeStructureProperties(Component):
                 self.dp_xyz[i, j, :] = DPxyz
 
         # upper and lower side pitch axis aft cap center
-        unknowns['pacc_ps'][:, :] = (self.dp_xyz[:, self.capDPs[0], [0,1]] + \
-                                    self.dp_xyz[:, self.capDPs[1], [0,1]]) / 2.
-        unknowns['pacc_ss'][:, :] = (self.dp_xyz[:, self.capDPs[2], [0,1]] + \
-                                    self.dp_xyz[:, self.capDPs[3], [0,1]]) / 2.
+        unknowns['pacc_ps'][:, :] = (self.dp_xyz[:, self.capDPs[0], [0, 1]] +
+                                     self.dp_xyz[:, self.capDPs[1], [0, 1]]) / 2.
+        unknowns['pacc_ss'][:, :] = (self.dp_xyz[:, self.capDPs[2], [0, 1]] +
+                                     self.dp_xyz[:, self.capDPs[3], [0, 1]]) / 2.
 
         # curvatures of region boundary curves
         unknowns['pacc_ps_curv'] = curvature(unknowns['pacc_ps'])
@@ -1389,15 +1417,17 @@ class BladeStructureProperties(Component):
 
         # web angles and offsets relative to rotor plane
         for i, iw in enumerate(self.web_def):
-            offset = self.dp_xyz[:, iw[0], [0,1]] -\
-                     self.dp_xyz[:, iw[1], [0,1]]
-            angle = -np.array([np.arctan(a) for a in offset[:, 0]/offset[:, 1]]) * 180. / np.pi
+            offset = self.dp_xyz[:, iw[0], [0, 1]] -\
+                self.dp_xyz[:, iw[1], [0, 1]]
+            angle = -np.array([np.arctan(a)
+                               for a in offset[:, 0] / offset[:, 1]]) * 180. / np.pi
             unknowns['web_offset%02d' % i] = offset
             unknowns['web_angle%02d' % i] = angle
 
         # region widths
-        for i in range(self.nDP-1):
-            unknowns['r%02d_width' % i] = (self.dp_s01[:, i+1] - self.dp_s01[:, i]) * smax
+        for i in range(self.nDP - 1):
+            unknowns['r%02d_width' % i] = (
+                self.dp_s01[:, i + 1] - self.dp_s01[:, i]) * smax
 
         # region thicknesses
         for i, reg in enumerate(self._regions):
@@ -1408,8 +1438,8 @@ class BladeStructureProperties(Component):
 
         # compute difference between airfoil thickness and
         # total material thickness at the different DPs
-        nr = int(self.nDP/2)
-        ri = range(self.nDP-1)
+        nr = int(self.nDP / 2)
+        ri = range(self.nDP - 1)
         self.thickness_diff = np.zeros((self.nsec, nr))
         self.shape_thickness = np.zeros((self.nsec, nr))
         # loop DP points from TE to LE
@@ -1417,12 +1447,12 @@ class BladeStructureProperties(Component):
             for j in range(nr):
                 # compute shape thickness assuming symmetric DPs!
                 x1, y1 = self.dp_xyz[i, j, :2] * params['blade_length']
-                x2, y2 = self.dp_xyz[i, -(j+1), :2] * params['blade_length']
+                x2, y2 = self.dp_xyz[i, -(j + 1), :2] * params['blade_length']
                 shape_thickness = ((x1 - x2)**2 + (y1 - y2)**2)**.5
                 # material thickness of lower/upper side
                 # based on first DP of every region
                 t1 = unknowns['r%02d_thickness' % (ri[j])][i]
-                t2 = unknowns['r%02d_thickness' % (ri[-(j+1)])][i]
+                t2 = unknowns['r%02d_thickness' % (ri[-(j + 1)])][i]
                 thick_max = t1 + t2
                 self.shape_thickness[i, j] = shape_thickness
                 self.thickness_diff[i, j] = shape_thickness - thick_max
